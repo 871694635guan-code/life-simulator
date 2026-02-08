@@ -1,11 +1,13 @@
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(express.static(__dirname)); 
 
 // 模拟状态
 let simulationState = {
