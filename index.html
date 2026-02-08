@@ -802,7 +802,7 @@
             document.getElementById('finalResult').innerHTML = '';
             
             try {
-                const response = await fetch('//simulate', {
+                const response = await fetch('/simulate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
@@ -832,7 +832,7 @@
             if (!isRunning || isPaused) return;
             
             try {
-                const response = await fetch('//simulate', {
+                const response = await fetch('/simulate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'step' })
@@ -905,7 +905,7 @@
             
             // 通知后端
             try {
-                await fetch('//simulate', {
+                await fetch('/simulate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'pause' })
@@ -933,7 +933,7 @@
             // 重置按钮文字
             document.getElementById('btnPause').textContent = '⏸️ 暂停修改';
             
-            await fetch('//simulate', {
+            await fetch('/simulate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
@@ -983,7 +983,7 @@
             updateButtons();
             renderTargets();
             
-            await fetch('//simulate', {
+            await fetch('/simulate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'reset' })
