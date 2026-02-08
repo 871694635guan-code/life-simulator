@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI人生模拟器 - 精确暂停版</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        @media (max-width: 900px) {
+            .main-layout { grid-template-columns: 1fr; }
+        }
+        
+        .section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid transparent;
+            transition: border-color 0.3s;
+        }
+        .section.paused {
+            border-color: #f39c12;
+            background: #fffbeb;
+        }
+        .section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        input:disabled {
+            background: #e0e0e0;
+            cursor: not-allowed;
+        }
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .target-list {
+            max-height: 250px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        .target-item {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .target-item.completed {
+            border-left-color: #27ae60;
+            background: #f0fff4;
+        }
+        .target-info h4 {
+            color: #333;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        .target-info p {
+            color: #666;
+            font-size: 12px;
+        }
+        .target-status {
+            font-size: 20px;
+        }
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        .btn-add {
+            background: #27ae60;
+            color: white;
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .btn-add:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            padding: 20px;
+            background: #f0f0f0;
+            border-radius: 15px;
+            align-items: center;
+        }
+        .btn {
+            flex: 1;
+            min-width: 100px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-warning {
+            background: #f39c12;
+            color: white;
+        }
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+        .btn-danger2 {
+            background: #e74c3c;
+            color: white;
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 2;
+            min-width: 200px;
+        }
+        .speed-control label {
+            margin: 0;
+            white-space: nowrap;
+        }
+        .speed-control input {
+            flex: 1;
+        }
+        .speed-value {
+            min-width: 60px;
+            text-align: center;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .status-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .status-badge.running {
+            background: #d5f4e6;
+            color: #27ae60;
+        }
+        .status-badge.paused {
+            background: #fef5e7;
+            color: #f39c12;
+        }
+        .status-badge.stopped {
+            background: #fadbd8;
+            color: #e74c3c;
+        }
+        
+        .simulation-area {
+            display: none;
+            margin-top: 30px;
+        }
+        .simulation-area.active {
+            display: block;
+        }
+        
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .stat-card h4 {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-compare {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-item.work { color: #3498db; }
+        .stat-item.gamble { color: #e74c3c; }
+        
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-top: 10px;
+            display: flex;
+        }
+        .progress-segment {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+            transition: width 0.3s;
+        }
+        .progress-work { background: #3498db; }
+        .progress-gamble { background: #e74c3c; }
+        
+        .status-bar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            text-align: center;
+        }
+        .status-item h4 {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+        .status-item p {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .pressure-detail {
+            font-size: 11px;
+            opacity: 0.8;
+            margin-top: 5px;
+            word-break: break-all;
+        }
+        
+        .daily-log {
+            max-height: 400px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        .log-entry {
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            background: white;
+            border-left: 4px solid #ddd;
+            animation: slideIn 0.3s;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .log-entry.gamble-win { border-left-color: #27ae60; background: #f0fff4; }
+        .log-entry.gamble-loss { border-left-color: #e74c3c; background: #fdf2f2; }
+        .log-entry.work { border-left-color: #3498db; background: #eff6ff; }
+        .log-entry.paused-marker { 
+            border-left-color: #f39c12; 
+            background: #fef5e7;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        .log-action {
+            font-weight: bold;
+        }
+        .log-pressure {
+            font-size: 20px;
+        }
+        .log-body {
+            color: #666;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+        .log-reason {
+            color: #667eea;
+            font-style: italic;
+            margin-top: 5px;
+            padding: 5px;
+            background: #f0f0f0;
+            border-radius: 5px;
+        }
+        
+        .year-marker {
+            background: #667eea;
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        .target-completed-notice {
+            background: #f39c12;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 10px 0;
+            font-weight: bold;
+            animation: pulse 1s;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+        .final-result {
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        .final-result.success { background: #d5f4e6; color: #27ae60; }
+        .final-result.fail { background: #fadbd8; color: #e74c3c; }
+        
+        .paused-notice {
+            background: #f39c12;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        
+        .locked-field {
+            background: #fff3cd !important;
+            border-color: #ffc107 !important;
+        }
+        .locked-hint {
+            font-size: 12px;
+            color: #856404;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 AI人生模拟器</h1>
+        <p class="subtitle">精确暂停版 - 完成当天后停止</p>
+        
+        <div class="main-layout">
+            <!-- 左侧：基础设定 -->
+            <div class="section" id="configSection">
+                <h3>
+                    ⚙️ 基础设定
+                    <span class="status-badge stopped" id="configStatus">未开始</span>
+                </h3>
+                <div class="row">
+                    <div class="form-group">
+                        <label>初始年龄 🔒</label>
+                        <input type="number" id="startAge" value="18" min="1" class="locked-field">
+                        <div class="locked-hint">模拟开始后不可修改</div>
+                    </div>
+                    <div class="form-group">
+                        <label>最大年龄（时限）</label>
+                        <input type="number" id="deadlineAge" value="60" min="1">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group">
+                        <label>每日生活成本（元）</label>
+                        <input type="number" id="dailyCost" value="50" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>打工日收入（元）</label>
+                        <input type="number" id="workIncome" value="200" min="1">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group">
+                        <label>赌博胜率（%）</label>
+                        <input type="number" id="gambleWinRate" value="70" min="0" max="100">
+                    </div>
+                    <div class="form-group">
+                        <label>赌博赢赚（元）</label>
+                        <input type="number" id="gambleWinAmount" value="800" min="1">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>赌博输赔（元）</label>
+                    <input type="number" id="gambleLossAmount" value="1000" min="1">
+                </div>
+            </div>
+            
+            <!-- 右侧：目标管理 -->
+            <div class="section" id="targetSection">
+                <h3>
+                    🎯 目标列表（累计制）
+                    <span style="font-size:12px; color:#666; font-weight:normal;">目标金额会叠加</span>
+                </h3>
+                <div class="target-list" id="targetList"></div>
+                
+                <div style="margin-top:15px; padding:15px; background:white; border-radius:10px;">
+                    <h4 style="margin-bottom:10px; color:#667eea;">➕ 新增目标</h4>
+                    <div class="form-group">
+                        <label>目标描述</label>
+                        <input type="text" id="newTargetDesc" placeholder="例如：买第一套房">
+                    </div>
+                    <div class="row">
+                        <div class="form-group">
+                            <label>目标金额（元）</label>
+                            <input type="number" id="newTargetAmount" placeholder="500000" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label>达成时限（岁前）</label>
+                            <input type="number" id="newTargetDeadline" placeholder="30" min="1">
+                        </div>
+                    </div>
+                    <button class="btn-add" id="btnAddTarget" onclick="addTarget()">添加目标</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 控制区 -->
+        <div class="controls">
+            <button class="btn btn-primary" id="btnStart" onclick="startSimulation()">🚀 开始模拟</button>
+            <button class="btn btn-warning" id="btnPause" onclick="requestPause()" disabled>⏸️ 暂停修改</button>
+            <button class="btn btn-success" id="btnResume" onclick="resumeSimulation()" disabled>▶️ 继续</button>
+            <button class="btn btn-danger2" id="btnReset" onclick="resetSimulation()">🔄 重新模拟</button>
+            
+            <div class="speed-control">
+                <label>⚡ 速度：</label>
+                <input type="range" id="speedRange" min="50" max="3000" value="800" step="50">
+                <span class="speed-value" id="speedValue">0.8秒</span>
+            </div>
+        </div>
+        
+        <!-- 暂停提示 -->
+        <div class="paused-notice" id="pausedNotice" style="display:none;">
+            ⏸️ 模拟已暂停！第 <span id="pausedDay">0</span> 天已完成，你可以修改除"初始年龄"外的所有设定，然后点击"继续"开始第 <span id="nextDay">0</span> 天
+        </div>
+        
+        <!-- 模拟显示区 -->
+        <div class="simulation-area" id="simArea">
+            <!-- 统计卡片 -->
+            <div class="stats-bar">
+                <div class="stat-card">
+                    <h4>📊 决策统计</h4>
+                    <div class="stat-compare">
+                        <div class="stat-item work">
+                            <div style="font-size:24px;">💼</div>
+                            <div id="stat-work">0天</div>
+                        </div>
+                        <div style="color:#999;">VS</div>
+                        <div class="stat-item gamble">
+                            <div style="font-size:24px;">🎰</div>
+                            <div id="stat-gamble">0天</div>
+                        </div>
+                    </div>
+                    <div class="progress-bar" style="margin-top:10px; height:20px;">
+                        <div class="progress-segment progress-work" id="progress-work" style="width:50%">打工 50%</div>
+                        <div class="progress-segment progress-gamble" id="progress-gamble" style="width:50%">赌博 50%</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <h4>💰 财务统计</h4>
+                    <div class="stat-value" id="stat-money">0</div>
+                    <div style="color:#666; font-size:12px; margin-top:5px;">
+                        总收入: <span id="stat-income">0</span> | 
+                        总支出: <span id="stat-expense">0</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <h4>🎲 赌博记录</h4>
+                    <div class="stat-compare">
+                        <div class="stat-item" style="color:#27ae60;">
+                            <div style="font-size:20px;">🏆</div>
+                            <div id="stat-wins">0胜</div>
+                        </div>
+                        <div class="stat-item" style="color:#e74c3c;">
+                            <div style="font-size:20px;">💔</div>
+                            <div id="stat-losses">0负</div>
+                        </div>
+                    </div>
+                    <div style="margin-top:10px; font-size:12px; color:#666;">
+                        胜率: <span id="stat-winrate">0%</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <h4>📅 已模拟天数</h4>
+                    <div class="stat-value" id="stat-days">0</div>
+                    <div style="color:#666; font-size:12px; margin-top:5px;">
+                        当前年龄: <span id="stat-age">18</span>岁
+                    </div>
+                </div>
+            </div>
+            
+            <div class="status-bar">
+                <div class="status-item">
+                    <h4>当前年龄</h4>
+                    <p id="display-age">-</p>
+                </div>
+                <div class="status-item">
+                    <h4>存款</h4>
+                    <p id="display-money">-</p>
+                </div>
+                <div class="status-item">
+                    <h4>累计目标</h4>
+                    <p id="display-target">-</p>
+                </div>
+                <div class="status-item">
+                    <h4>压力状态</h4>
+                    <p id="display-pressure">-</p>
+                    <div class="pressure-detail" id="pressure-reason">-</div>
+                </div>
+                <div class="status-item">
+                    <h4>已进行</h4>
+                    <p id="display-day">-</p>
+                </div>
+            </div>
+            
+            <div class="daily-log" id="dailyLog"></div>
+            <div id="finalResult"></div>
+        </div>
+    </div>
+
+    <script>
+        let targets = [];
+        let isRunning = false;
+        let isPaused = false;
+        let isWaitingForResume = false;
+        let simulationTimeout = null;
+        let currentSpeed = 800;
+        
+        // 初始化示例目标
+        addTarget('大学毕业存钱', 50000, 22);
+        addTarget('买第一辆车', 150000, 28);
+        
+        function addTarget(desc, amount, deadline) {
+            const description = desc || document.getElementById('newTargetDesc').value;
+            const amountVal = parseInt(amount || document.getElementById('newTargetAmount').value);
+            const deadlineVal = parseInt(deadline || document.getElementById('newTargetDeadline').value);
+            
+            if (!description || !amountVal || !deadlineVal) {
+                alert('请填写完整的目标信息');
+                return;
+            }
+            
+            const startAge = parseInt(document.getElementById('startAge').value);
+            if (deadlineVal <= startAge) {
+                alert('目标时限必须大于初始年龄');
+                return;
+            }
+            
+            const target = {
+                id: Date.now(),
+                description,
+                amount: amountVal,
+                deadlineAge: deadlineVal,
+                completed: false
+            };
+            
+            targets.push(target);
+            renderTargets();
+            
+            if (!desc) {
+                document.getElementById('newTargetDesc').value = '';
+                document.getElementById('newTargetAmount').value = '';
+                document.getElementById('newTargetDeadline').value = '';
+            }
+        }
+        
+        function removeTarget(id) {
+            if (isRunning && !isPaused) {
+                alert('请先暂停模拟再删除目标');
+                return;
+            }
+            targets = targets.filter(t => t.id !== id);
+            renderTargets();
+        }
+        
+        function renderTargets() {
+            const list = document.getElementById('targetList');
+            if (targets.length === 0) {
+                list.innerHTML = '<p style="color:#999; text-align:center; padding:20px;">暂无目标，请添加</p>';
+                return;
+            }
+            
+            let accumulated = 0;
+            const sorted = [...targets].sort((a, b) => a.deadlineAge - b.deadlineAge);
+            
+            list.innerHTML = sorted.map((t, index) => {
+                accumulated += t.amount;
+                return `
+                    <div class="target-item ${t.completed ? 'completed' : ''}">
+                        <div class="target-info">
+                            <h4>${index + 1}. ${t.completed ? '✅ ' : ''}${t.description}</h4>
+                            <p>
+                                本目标: ${t.amount.toLocaleString()}元 | 
+                                累计需: ${accumulated.toLocaleString()}元 | 
+                                时限: ${t.deadlineAge}岁前
+                                ${t.completed ? `<br>✓ 完成于${t.completedAge}岁` : ''}
+                            </p>
+                        </div>
+                        <div>
+                            <span class="target-status">${t.completed ? '🎉' : '⏳'}</span>
+                            <button class="btn-small btn-danger" onclick="removeTarget(${t.id})" 
+                                ${(isRunning && !isPaused) ? 'disabled' : ''}>删除</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        document.getElementById('speedRange').addEventListener('input', function() {
+            currentSpeed = parseInt(this.value);
+            document.getElementById('speedValue').textContent = (currentSpeed / 1000).toFixed(2) + '秒';
+        });
+        
+        function updateUIState(state) {
+            const badge = document.getElementById('configStatus');
+            const configSection = document.getElementById('configSection');
+            const targetSection = document.getElementById('targetSection');
+            const pausedNotice = document.getElementById('pausedNotice');
+            const btnAddTarget = document.getElementById('btnAddTarget');
+            const startAgeInput = document.getElementById('startAge');
+            
+            if (state === 'running') {
+                badge.textContent = '运行中';
+                badge.className = 'status-badge running';
+                configSection.classList.remove('paused');
+                targetSection.classList.remove('paused');
+                pausedNotice.style.display = 'none';
+                btnAddTarget.disabled = true;
+                
+                document.querySelectorAll('input').forEach(input => {
+                    if (input.id === 'startAge') {
+                        input.disabled = true;
+                        input.classList.add('locked-field');
+                    } else if (input.id !== 'speedRange') {
+                        input.disabled = true;
+                    }
+                });
+            } else if (state === 'paused') {
+                badge.textContent = '已暂停';
+                badge.className = 'status-badge paused';
+                configSection.classList.add('paused');
+                targetSection.classList.add('paused');
+                pausedNotice.style.display = 'block';
+                btnAddTarget.disabled = false;
+                
+                document.querySelectorAll('input').forEach(input => {
+                    if (input.id === 'startAge') {
+                        input.disabled = true;
+                        input.classList.add('locked-field');
+                    } else {
+                        input.disabled = false;
+                    }
+                });
+            } else {
+                badge.textContent = '未开始';
+                badge.className = 'status-badge stopped';
+                configSection.classList.remove('paused');
+                targetSection.classList.remove('paused');
+                pausedNotice.style.display = 'none';
+                btnAddTarget.disabled = false;
+                
+                document.querySelectorAll('input').forEach(input => {
+                    input.disabled = false;
+                    input.classList.remove('locked-field');
+                });
+            }
+        }
+        
+        function updateButtons() {
+            document.getElementById('btnStart').disabled = isRunning;
+            document.getElementById('btnPause').disabled = !isRunning || isPaused;
+            document.getElementById('btnResume').disabled = !isPaused;
+            document.getElementById('btnReset').disabled = false;
+        }
+        
+        function getConfigFromInputs() {
+            return {
+                startAge: parseInt(document.getElementById('startAge').value),
+                deadlineAge: parseInt(document.getElementById('deadlineAge').value),
+                dailyCost: parseInt(document.getElementById('dailyCost').value),
+                workIncome: parseInt(document.getElementById('workIncome').value),
+                gambleWinRate: parseInt(document.getElementById('gambleWinRate').value),
+                gambleWinAmount: parseInt(document.getElementById('gambleWinAmount').value),
+                gambleLossAmount: parseInt(document.getElementById('gambleLossAmount').value)
+            };
+        }
+        
+        async function startSimulation() {
+            if (targets.length === 0) {
+                alert('请至少添加一个目标！');
+                return;
+            }
+            
+            const config = getConfigFromInputs();
+            
+            if (config.deadlineAge <= config.startAge) {
+                alert('最大年龄必须大于初始年龄！');
+                return;
+            }
+            
+            document.getElementById('simArea').classList.add('active');
+            document.getElementById('dailyLog').innerHTML = '';
+            document.getElementById('finalResult').innerHTML = '';
+            
+            try {
+                const response = await fetch('http://localhost:3000/simulate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        action: 'start', 
+                        config, 
+                        targets,
+                        speed: currentSpeed 
+                    })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    isRunning = true;
+                    isPaused = false;
+                    isWaitingForResume = false;
+                    updateUIState('running');
+                    updateButtons();
+                    runNextDay();
+                }
+            } catch (error) {
+                alert('连接失败：' + error.message);
+            }
+        }
+        
+        // 关键修复：使用递归而不是 setInterval，确保精确控制每一天
+        async function runNextDay() {
+            if (!isRunning || isPaused) return;
+            
+            try {
+                const response = await fetch('http://localhost:3000/simulate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'step' })
+                });
+                const data = await response.json();
+                
+                if (data.paused) {
+                    // 后端已暂停，等待用户继续
+                    isPaused = true;
+                    isWaitingForResume = true;
+                    updateUIState('paused');
+                    updateButtons();
+                    return;
+                }
+                
+                if (data.success) {
+                    if (data.finished) {
+                        isRunning = false;
+                        showFinalResult(data);
+                        updateUIState('stopped');
+                        updateButtons();
+                        updateStats(data.state);
+                    } else {
+                        addLogEntry(data.log);
+                        updateDisplay(data.state);
+                        updateStats(data.state);
+                        
+                        // 检查是否需要暂停（用户点击了暂停）
+                        if (data.paused || isPaused) {
+                            isPaused = true;
+                            isWaitingForResume = true;
+                            document.getElementById('pausedDay').textContent = data.log.day;
+                            document.getElementById('nextDay').textContent = data.log.day + 1;
+                            updateUIState('paused');
+                            updateButtons();
+                            
+                            // 添加暂停标记到日志
+                            const logArea = document.getElementById('dailyLog');
+                            const pauseDiv = document.createElement('div');
+                            pauseDiv.className = 'log-entry paused-marker';
+                            pauseDiv.innerHTML = `⏸️ 模拟已暂停 - 第${data.log.day}天已完成，等待继续...`;
+                            logArea.appendChild(pauseDiv);
+                            logArea.scrollTop = logArea.scrollHeight;
+                            
+                            return; // 停止，不继续下一天
+                        }
+                        
+                        // 继续下一天
+                        simulationTimeout = setTimeout(() => {
+                            runNextDay();
+                        }, currentSpeed);
+                    }
+                }
+            } catch (error) {
+                console.error('模拟出错:', error);
+                // 出错后重试
+                simulationTimeout = setTimeout(() => {
+                    runNextDay();
+                }, 2000);
+            }
+        }
+        
+        async function requestPause() {
+            // 立即更新UI，让用户知道已收到暂停请求
+            document.getElementById('btnPause').textContent = '⏳ 暂停中...';
+            document.getElementById('btnPause').disabled = true;
+            
+            // 设置前端暂停标志，让当前这天完成后停止
+            isPaused = true;
+            
+            // 通知后端
+            try {
+                await fetch('http://localhost:3000/simulate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'pause' })
+                });
+            } catch (error) {
+                console.error('暂停请求失败:', error);
+            }
+            
+            // 注意：不立即更新UI状态，等待当前天完成后再更新
+        }
+        
+        async function resumeSimulation() {
+            if (targets.length === 0) {
+                alert('至少需要保留一个目标！');
+                return;
+            }
+            
+            const config = getConfigFromInputs();
+            
+            isPaused = false;
+            isWaitingForResume = false;
+            updateUIState('running');
+            updateButtons();
+            
+            // 重置按钮文字
+            document.getElementById('btnPause').textContent = '⏸️ 暂停修改';
+            
+            await fetch('http://localhost:3000/simulate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    action: 'resume', 
+                    config,
+                    targets
+                })
+            });
+            
+            // 继续下一天
+            runNextDay();
+        }
+        
+        async function resetSimulation() {
+            isRunning = false;
+            isPaused = false;
+            isWaitingForResume = false;
+            if (simulationTimeout) clearTimeout(simulationTimeout);
+            
+            document.getElementById('simArea').classList.remove('active');
+            document.getElementById('dailyLog').innerHTML = '';
+            document.getElementById('finalResult').innerHTML = '';
+            
+            // 重置统计
+            document.getElementById('stat-work').textContent = '0天';
+            document.getElementById('stat-gamble').textContent = '0天';
+            document.getElementById('progress-work').style.width = '50%';
+            document.getElementById('progress-gamble').style.width = '50%';
+            document.getElementById('stat-money').textContent = '0';
+            document.getElementById('stat-income').textContent = '0';
+            document.getElementById('stat-expense').textContent = '0';
+            document.getElementById('stat-wins').textContent = '0胜';
+            document.getElementById('stat-losses').textContent = '0负';
+            document.getElementById('stat-winrate').textContent = '0%';
+            document.getElementById('stat-days').textContent = '0';
+            document.getElementById('stat-age').textContent = document.getElementById('startAge').value;
+            
+            // 重置按钮
+            document.getElementById('btnPause').textContent = '⏸️ 暂停修改';
+            
+            targets.forEach(t => { 
+                t.completed = false; 
+                delete t.completedAge; 
+            });
+            
+            updateUIState('stopped');
+            updateButtons();
+            renderTargets();
+            
+            await fetch('http://localhost:3000/simulate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'reset' })
+            });
+        }
+        
+        function updateStats(state) {
+            if (!state.stats) return;
+            
+            const stats = state.stats;
+            const history = state.history;
+            
+            document.getElementById('stat-work').textContent = stats.workCount + '天';
+            document.getElementById('stat-gamble').textContent = stats.gambleCount + '天';
+            
+            const total = stats.workCount + stats.gambleCount;
+            if (total > 0) {
+                const workPercent = (stats.workCount / total * 100).toFixed(1);
+                const gamblePercent = (stats.gambleCount / total * 100).toFixed(1);
+                document.getElementById('progress-work').style.width = workPercent + '%';
+                document.getElementById('progress-work').textContent = `打工 ${workPercent}%`;
+                document.getElementById('progress-gamble').style.width = gamblePercent + '%';
+                document.getElementById('progress-gamble').textContent = `赌博 ${gamblePercent}%`;
+            }
+            
+            document.getElementById('stat-money').textContent = state.currentMoney.toLocaleString();
+            document.getElementById('stat-income').textContent = stats.totalIncome.toLocaleString();
+            document.getElementById('stat-expense').textContent = stats.totalExpenses.toLocaleString();
+            document.getElementById('stat-wins').textContent = history.wins + '胜';
+            document.getElementById('stat-losses').textContent = history.losses + '负';
+            
+            const totalGambles = history.wins + history.losses;
+            const winRate = totalGambles > 0 ? (history.wins / totalGambles * 100).toFixed(1) : 0;
+            document.getElementById('stat-winrate').textContent = winRate + '%';
+            
+            document.getElementById('stat-days').textContent = stats.totalDays;
+            document.getElementById('stat-age').textContent = state.currentAge;
+        }
+        
+        function addLogEntry(log) {
+            const logArea = document.getElementById('dailyLog');
+            
+            if (log.yearPassed) {
+                const yearDiv = document.createElement('div');
+                yearDiv.className = 'year-marker';
+                yearDiv.textContent = `📅 ${log.age}岁生日！`;
+                logArea.appendChild(yearDiv);
+            }
+            
+            if (log.completedTarget) {
+                const targetDiv = document.createElement('div');
+                targetDiv.className = 'target-completed-notice';
+                targetDiv.innerHTML = `🎉 达成目标：${log.completedTarget.name}！<br>累计存款突破 ${log.completedTarget.amount.toLocaleString()}元`;
+                logArea.appendChild(targetDiv);
+                
+                const target = targets.find(t => t.description === log.completedTarget.name);
+                if (target) {
+                    target.completed = true;
+                    target.completedAge = log.age;
+                    renderTargets();
+                }
+            }
+            
+            const div = document.createElement('div');
+            let type = 'work';
+            if (log.action.includes('赢')) type = 'gamble-win';
+            if (log.action.includes('输')) type = 'gamble-loss';
+            
+            div.className = `log-entry ${type}`;
+            div.innerHTML = `
+                <div class="log-header">
+                    <span class="log-action">
+                        第${log.day}天 (${log.age}岁${log.dayInYear}天) ${log.action}
+                    </span>
+                    <span class="log-pressure" title="压力${log.pressure}：${log.pressureReason}">
+                        ${log.pressureEmoji}
+                    </span>
+                </div>
+                <div class="log-body">
+                    💰 净收入: ${log.netIncome > 0 ? '+' : ''}${log.netIncome}元 | 
+                    存款: ${log.totalMoney.toLocaleString()}元 | 
+                    状态: ${log.pressureText} (${log.pressure}/100)<br>
+                    ${log.description}
+                </div>
+                <div class="log-reason">
+                    🤖 AI决策: ${log.decisionReason}
+                </div>
+            `;
+            logArea.appendChild(div);
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+        
+        function updateDisplay(state) {
+            document.getElementById('display-age').textContent = `${state.currentAge}岁`;
+            document.getElementById('display-money').textContent = `${state.currentMoney.toLocaleString()}元`;
+            document.getElementById('display-day').textContent = `${state.dayCount}天`;
+            
+            const activeTarget = state.targets.find(t => !t.completed);
+            if (activeTarget) {
+                document.getElementById('display-target').innerHTML = 
+                    `${activeTarget.description}<br><small>需累计${activeTarget.accumulatedAmount.toLocaleString()}元</small>`;
+            } else {
+                document.getElementById('display-target').textContent = '全部完成！';
+            }
+            
+            if (state.pressure) {
+                document.getElementById('display-pressure').textContent = 
+                    `${state.pressure.emoji} ${state.pressure.text}`;
+                document.getElementById('pressure-reason').textContent = state.pressure.reason;
+            }
+        }
+        
+        function showFinalResult(data) {
+            const div = document.createElement('div');
+            const completedCount = data.state.targets.filter(t => t.completed).length;
+            div.className = `final-result ${data.reason === 'success' ? 'success' : 'fail'}`;
+            div.innerHTML = `
+                ${data.message}<br>
+                <small style="font-size:14px; font-weight:normal;">
+                    历时${data.state.dayCount}天，最终存款${data.state.currentMoney.toLocaleString()}元<br>
+                    完成目标: ${completedCount}/${data.state.targets.length}<br>
+                    打工${data.state.stats.workCount}天 vs 赌博${data.state.stats.gambleCount}天
+                </small>
+            `;
+            document.getElementById('finalResult').appendChild(div);
+        }
+    </script>
+</body>
+</html>
